@@ -608,6 +608,7 @@ class VLMPlanner:
         use_sam2=False,
         sam2_config_path="",
         sam2_checkpoint_path="",
+        dataset_save_dir='',
     ):
         
         self.last_visual_description = ""
@@ -747,6 +748,11 @@ Look at the image and describe what you see.
         self.predicate_model = PredicateModel_v3(hidden_dim = 128, num_top_pairs=1, device=device, model_name=clip_model_name).to(device)
         
         self.common_objects = ["wall", "door", "cabinet", "stove", "counter", "window", "other"]
+
+        self.dataset_save_dir = dataset_save_dir
+        if dataset_save_dir:
+            os.makedirs(dataset_save_dir, exist_ok=True)
+        self._dataset_step = 0
 
     def set_actions(self, actions):
         self.actions = actions
@@ -1414,13 +1420,42 @@ CORRECT: [55, 95, 79, 133, 2, 155, 156, 55, 95, 79, 39, 133]
             ]
 
     def reset(self):
-        # at the beginning of the episode
         self.last_visual_description = ""
         self.last_reasoning = ""
         self.episode_messages = []
         self.episode_act_feedback = []
         self.planner_steps = 0
         self.output_json_error = 0
+
+    def _save_dataset_sample(self, image_path, image, sg_info, all_labels, all_boxes, instruction):
+        if not self.dataset_save_dir:
+            return
+        step = self._dataset_step
+        self._dataset_step += 1
+        frame_filename = f"frame_{step:06d}.jpg"
+        frame_save_path = os.path.join(self.dataset_save_dir, frame_filename)
+        cv2.imwrite(frame_save_path, cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
+        objects = [{"label": lbl, "bbox_xyxy": box} for lbl, box in zip(all_labels, all_boxes)]
+        annotation = {
+            "step": step,
+            "frame": frame_filename,
+            "source_image_path": image_path,
+            "instruction": instruction,
+            "objects": objects,
+            "scene_graph": {
+                "target_state": sg_info.get("target_state", ""),
+                "current_state": sg_info.get("current_state", ""),
+                "target_objects": sg_info.get("target_objects", []),
+                "target_attributes": sg_info.get("target_attributes", []),
+                "target_relations": sg_info.get("target_relations", []),
+                "current_objects": sg_info.get("current_objects", []),
+                "current_attributes": sg_info.get("current_attributes", []),
+                "current_relations": sg_info.get("current_relations", []),
+            },
+        }
+        ann_path = os.path.join(self.dataset_save_dir, f"annotation_{step:06d}.json")
+        with open(ann_path, "w") as f:
+            json.dump(annotation, f, indent=2)
 
     def language_to_action(self, output_text):
         pattern = r"\*\*\d+\*\*"
@@ -2315,6 +2350,16 @@ CORRECT: [55, 95, 79, 133, 2, 155, 156, 55, 95, 79, 39, 133]
                     target_labels = []
             
             self.processed_images[image_path] = prompt_image_path
+
+            boxes_to_save = convert_gd_boxes_to_pixel(boxes, width, height) if isinstance(boxes, torch.Tensor) and len(boxes) > 0 else []
+            self._save_dataset_sample(
+                image_path=image_path,
+                image=image,
+                sg_info=sg_info,
+                all_labels=labels,
+                all_boxes=boxes_to_save,
+                instruction=user_instruction,
+            )
 
             # Arrange the prompt into vlm
             if self.scene_graph_text:

@@ -4,7 +4,7 @@ from tqdm import tqdm
 import time
 import json
 from embodiedbench.envs.eb_alfred.EBAlfEnv import EBAlfEnv, ValidEvalSets
-from embodiedbench.planner.vlm_planner_esca import VLMPlanner
+from embodiedbench.planner.alfred.esca import VLMPlanner
 from embodiedbench.evaluator.summarize_result import average_json_values
 from embodiedbench.evaluator.evaluator_utils import load_saved_data, update_config_with_args
 from embodiedbench.evaluator.config.system_prompts import alfred_laser_system_prompt
@@ -206,7 +206,8 @@ class EB_AlfredEvaluator():
                                             # Add SAM2 parameters
                                             use_sam2=self.use_sam2,
                                             sam2_config_path=self.sam2_config_path,
-                                            sam2_checkpoint_path=self.sam2_checkpoint_path)
+                                            sam2_checkpoint_path=self.sam2_checkpoint_path,
+                                            dataset_save_dir=self.config.get('dataset_save_dir', ''))
 
             self.evaluate()
             average_json_values(os.path.join(self.env.log_path, 'results'), output_file='summary.json')
@@ -359,50 +360,35 @@ if __name__ == '__main__':
 
 
     config = {
-        'model_name': 'gpt-4o',  # 'Qwen/Qwen2-VL-7B-Instruct',
+        'model_name': 'gpt-4o',
         'n_shots': 10,
         'down_sample_ratio': 1.0,
-        'model_type': 'remote', # 'local', 
+        'model_type': 'remote',
         'language_only': 0,
-        'exp_name': 'gpt_4o_esca_integration_final_no_sam_NEW_FINAL_spatial',
-        'chat_history': 0, 
+        'exp_name': 'dataset_collection',
+        'chat_history': 0,
         'detection_box': True,
-        'eval_sets': ['spatial'],
-        # 'eval_sets': ['visual_appearance'],
-        # 'eval_sets': ['long_horizon', 'common_sense', 'visual_appearance'],
-        'selected_indexes': [], 
-        # 'eval_sets': ['base'],
-        # 'selected_indexes': list(range(5, 10)) + list(range(40,50)),
-        'multistep':0, 
+        'eval_sets': [],  # empty = all eval sets
+        'selected_indexes': [],  # empty = all episodes
+        'multistep': 0,
         'block_objects': False,
         'sg_text': True,
-        'resolution': 500, 
+        'resolution': 500,
         'env_feedback': 1,
-        'tp': 4,
-        'action_num_per_plan': 5,
-        'fov': 100,
-        'sleep_time': 0,
-        'purpose': "retest",
-        'icl_abl':0, 
-        'visual': 0,
+        'tp': 1,
         'gd_only': False,
-        'top_k': 1, 
+        'top_k': 1,
         'aggr_thres': 0.75,
-        'fallback_to_original': True,  # Fallback to original VLM if detection quality is poor
-        'max_plan_length': 20,  # Limit plan length for long horizon tasks
-        # 'gd_config_path': '/home/asethi04/GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py',
-        # 'gd_checkpoint_path': '/home/asethi04/GroundingDINO/checkpoints/groundingdino_swint_ogc.pth',
-        'gd_box_threshold': 0.6,  # Increase to reduce false positives
-        'gd_text_threshold': 0.5,  # Increase for more confident detections
+        'fallback_to_original': True,
+        'max_plan_length': 20,
+        'gd_box_threshold': 0.3,
+        'gd_text_threshold': 0.25,
         'max_test_ct': 5,
-        # SAM2 configuration
-        'use_sam2': False,  # Set to True to enable SAM2
-        'sam2_config_path': "configs/sam2.1/sam2.1_hiera_b+.yaml",
-        'sam2_checkpoint_path': "/home/asethi04/sam2/checkpoints/sam2.1_hiera_base_plus.pt",
+        'use_sam2': False,
+        'sam2_config_path': '',
+        'sam2_checkpoint_path': '',
+        'dataset_save_dir': './dataset/alfred',
     }
-
-    # args = parse_arguments()
-    # update_config_with_args(config, args)
 
     evaluator = EB_AlfredEvaluator(config)
     evaluator.evaluate_main()

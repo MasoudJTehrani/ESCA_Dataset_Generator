@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import tqdm
 import json
 from embodiedbench.envs.eb_navigation.EBNavEnv import EBNavigationEnv, ValidEvalSets
-from embodiedbench.planner.nav_planner_esca import EBNavigationPlanner
+from embodiedbench.planner.navigation.esca import EBNavigationPlanner
 from embodiedbench.evaluator.summarize_result import average_json_values
 import sys
 import warnings
@@ -102,9 +102,9 @@ class EB_NavigationEvaluator():
             #     selected_indexes = list(range(0, 20))
             # else: 
             
-            selected_indexes = [45]
-                
-            self.env = EBNavigationEnv(eval_set=self.eval_set, down_sample_ratio=self.config['down_sample_ratio'], 
+            selected_indexes = self.config.get('selected_indexes', [])
+
+            self.env = EBNavigationEnv(eval_set=self.eval_set, down_sample_ratio=self.config['down_sample_ratio'],
                                    exp_name=exp_name, multiview=self.config['multiview'], boundingbox=False, 
                                    multistep = self.config['multistep'], resolution = self.config['resolution'],
                                    selected_indexes=selected_indexes)
@@ -125,7 +125,8 @@ class EB_NavigationEvaluator():
                                            blockingobj=self.config['block_objects'], 
                                            gd_checkpoint_path=self.gd_checkpoint_path, 
                                            gd_config_path=self.gd_config_path,
-                                           top_k=self.config['top_k'], aggr_thres=self.config['aggr_thres'])
+                                           top_k=self.config['top_k'], aggr_thres=self.config['aggr_thres'],
+                                           dataset_save_dir=self.config.get('dataset_save_dir', ''))
             
             self.evaluate()
             
@@ -296,38 +297,33 @@ if __name__ == '__main__':
     #           'gd_config_path': '/home/jianih/research/GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py',
     #           'gd_checkpoint_path': '/home/jianih/research/GroundingDINO/checkpoints/groundingdino_swint_ogc.pth',}
     
-    config = {'model_name': 'gpt-4o', 
-              'down_sample_ratio': 1, 
-              'model_type': 'remote', 
-              'language_only': False, 
-            #   'eval_sets': ['base', 'common_sense', 'long_horizon', 'visual_appearance', 'complex_instruction'], 
-            #   'eval_sets': ['complex_instruction', 'base', 'common_sense'], 
-              'eval_sets': ['visual_appearance'],               
-              'chat_history': True, 
-              'n_shots': 3, 
-              'multiview': False, 
-              'detection_box': True, 
-              'sg_text': True,
-              'block_objects': False,
-              'multistep': True, 
-              'resolution': 500, 
-              'exp_name': 'esca_2', 
-              'visual_icl': False, 
-              'tp': 4,
-              'action_num_per_plan': 5,
-              'fov': 100,
-              'sleep_time': 0,
-              'purpose': "retest",
-              'icl_abl':0, 
-              'visual':0,
-              'gd_only': True,
-              'top_k': 1, 
-              'aggr_thres': 0.3,
-              'max_test_ct': 5,
-              'gd_config_path': '/home/jianih/research/GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py',
-              'gd_checkpoint_path': '/home/jianih/research/GroundingDINO/checkpoints/groundingdino_swint_ogc.pth',
-              }
-              
+    config = {
+        'model_name': 'gpt-4o',
+        'down_sample_ratio': 1,
+        'model_type': 'remote',
+        'language_only': False,
+        'eval_sets': [],  # empty = all eval sets
+        'selected_indexes': [],  # empty = all episodes
+        'chat_history': False,
+        'n_shots': 3,
+        'multiview': False,
+        'detection_box': True,
+        'sg_text': True,
+        'block_objects': False,
+        'multistep': False,
+        'resolution': 500,
+        'exp_name': 'dataset_collection',
+        'visual_icl': False,
+        'tp': 1,
+        'gd_only': False,
+        'top_k': 1,
+        'aggr_thres': 0.1,
+        'max_test_ct': 5,
+        'gd_config_path': '/path/to/GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py',
+        'gd_checkpoint_path': '/path/to/GroundingDINO/checkpoints/groundingdino_swint_ogc.pth',
+        'dataset_save_dir': './dataset/navigation',
+    }
+
     evaluator = EB_NavigationEvaluator(config)
     evaluator.evaluate_main()
 

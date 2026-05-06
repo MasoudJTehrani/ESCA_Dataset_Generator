@@ -156,28 +156,29 @@ def save_prompts_one_image(frame_image, boxes, points, labels, save_path):
     
     
 class EBNavigationPlanner():
-    def __init__(self, model_name = '', 
-                 model_type = 'remote', 
-                 actions = [], 
-                 system_prompt = '', 
-                 examples = '', 
+    def __init__(self, model_name = '',
+                 model_type = 'remote',
+                 actions = [],
+                 system_prompt = '',
+                 examples = '',
                  scene_graph_examples = '',
-                 n_shot=1, 
-                 obs_key='head_rgb', 
-                 chat_history=False, 
-                 language_only=False, 
-                 multiview = False, 
-                 multistep = False, 
-                 visual_icl = False, 
-                 boundingbox = False, 
+                 n_shot=1,
+                 obs_key='head_rgb',
+                 chat_history=False,
+                 language_only=False,
+                 multiview = False,
+                 multistep = False,
+                 visual_icl = False,
+                 boundingbox = False,
                  blockingobj = False,
                  scene_graph_text = False,
                  gd_only = False,
-                 tp=1, 
+                 tp=1,
                  top_k=1,
                  aggr_thres=0.1,
                  gd_config_path='',
                  gd_checkpoint_path='',
+                 dataset_save_dir='',
                  kwargs={}):
         
         self.model_name = model_name
@@ -242,6 +243,11 @@ You are supposed to output in JSON. Note that nested quotes is not allowed. Plea
 
         self.scene_graph_prompt_prefix = "\n Scene Graph Information: The current image height is {w}, width is {h}. A missing scene graph means the object is not clearly identifiable from the scene. It does not necessarily means this object is not in the scene. \n"
 
+        self.dataset_save_dir = dataset_save_dir
+        if dataset_save_dir:
+            os.makedirs(dataset_save_dir, exist_ok=True)
+        self._dataset_step = 0
+
         if model_type == 'custom':
             self.model = CustomModel(model_name, language_only)
         else:
@@ -261,6 +267,41 @@ You are supposed to output in JSON. Note that nested quotes is not allowed. Plea
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.predicate_model = load_model(model_dir, model_name, epoch, device)
+
+    def _save_dataset_sample(self, image_path, image, sg_info, all_labels, all_boxes, instruction):
+        if not self.dataset_save_dir:
+            return
+
+        step = self._dataset_step
+        self._dataset_step += 1
+
+        # Save the raw frame
+        frame_filename = f"frame_{step:06d}.jpg"
+        frame_save_path = os.path.join(self.dataset_save_dir, frame_filename)
+        cv2.imwrite(frame_save_path, cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
+
+        # Build annotation
+        all_boxes_list = all_boxes.tolist() if isinstance(all_boxes, torch.Tensor) else [b.tolist() if isinstance(b, torch.Tensor) else b for b in all_boxes]
+        objects = [{"label": lbl, "bbox_xyxy": box} for lbl, box in zip(all_labels, all_boxes_list)]
+
+        annotation = {
+            "step": step,
+            "frame": frame_filename,
+            "source_image_path": image_path,
+            "instruction": instruction,
+            "objects": objects,
+            "scene_graph": {
+                "target_names": sg_info.get("target_name", []),
+                "target_attributes": sg_info.get("target_attribute", []),
+                "target_relations": sg_info.get("target_relation", []),
+                "related_objects": sg_info.get("related_objects", []),
+                "blocking_names": sg_info.get("blocking_name", []),
+            },
+        }
+
+        ann_path = os.path.join(self.dataset_save_dir, f"annotation_{step:06d}.json")
+        with open(ann_path, "w") as f:
+            json.dump(annotation, f, indent=2)
 
     def set_actions(self, actions):
         self.actions = actions
@@ -429,7 +470,6 @@ You are supposed to output in JSON. Note that nested quotes is not allowed. Plea
 
 
     def reset(self):
-        # at the beginning of the episode
         self.episode_messages = []
         self.episode_act_feedback = []
         self.planner_steps = 0
@@ -775,13 +815,22 @@ You are supposed to output in JSON. Note that nested quotes is not allowed. Plea
                 labels, boxes = self.predict_gd(image, gd_query_objects, box_threshold=0.1, text_threshold=0.1)
 
                 target_labels, target_bboxes = self.predict_laser(
-                      image=image, 
-                      boxes=boxes, 
+                      image=image,
+                      boxes=boxes,
                       target_names=target_names,
                       query_names=query_objects,
                       query_attributes=target_attributes,
                       )
-                
+
+            self._save_dataset_sample(
+                image_path=image_path,
+                image=image,
+                sg_info=sg_info,
+                all_labels=labels,
+                all_boxes=boxes,
+                instruction=user_instruction,
+            )
+
             if self.boundingbox:
                 if not len(target_bboxes) == 0:
                     save_prompts_one_image(frame_image=image, 
