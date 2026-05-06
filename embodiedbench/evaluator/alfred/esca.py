@@ -9,11 +9,11 @@ from embodiedbench.evaluator.summarize_result import average_json_values
 from embodiedbench.evaluator.evaluator_utils import load_saved_data, update_config_with_args
 from embodiedbench.evaluator.config.system_prompts import alfred_laser_system_prompt
 from embodiedbench.main import logger
-from alfred_examples import laser_sg_examples_pre_post, laser_sg_examples_no_revert
+from embodiedbench.evaluator.alfred_examples import laser_sg_examples_pre_post, laser_sg_examples_no_revert
 
 import os
 
-example_path = os.path.join(os.path.dirname(__file__), 'config/alfred_examples.json')
+example_path = os.path.join(os.path.dirname(__file__), '../config/alfred_examples.json')
 
 #common sense, base, and ...
 target_examples = [
@@ -96,7 +96,7 @@ target_examples = [
 ]
 
     
-exploration_example_path = os.path.join(os.path.dirname(__file__), 'config/alfred_long_horizon_examples.json')
+exploration_example_path = os.path.join(os.path.dirname(__file__), '../config/alfred_long_horizon_examples.json')
 
 system_prompt = alfred_laser_system_prompt
 

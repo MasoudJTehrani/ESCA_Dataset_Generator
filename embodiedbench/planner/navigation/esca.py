@@ -27,7 +27,6 @@ template_lang = laser_lang_template
 MESSAGE_WINDOW_LEN = 5
 
 import sys
-sys.path.append("/home/jianih/research/GroundingDINO")
 from groundingdino.util.inference import Model as gd_Model
 from groundingdino.util.inference import load_image as load_gd_image
 from groundingdino.util.utils import get_phrases_from_posmap
@@ -36,7 +35,7 @@ import math
 from PIL import Image
 import numpy as np
 
-model_lib_path = "/home/jianih/research/LASER/LASER-unified/src/models"
+model_lib_path = "/home/vortex/LASER/laser/models"
 sys.path.append(model_lib_path)
 
 from llava_clip_model_v3 import PredicateModel as PredicateModel_v3
@@ -260,13 +259,9 @@ You are supposed to output in JSON. Note that nested quotes is not allowed. Plea
     
         self.grounding_model.model = self.grounding_model.model.to("cuda:0")
         
-        all_model_dir = "/home/jianih/research/LASER/data/LLaVA-Video-178K-v2/models"
-        model_dir = os.path.join(all_model_dir, f"ensemble-02-10")
-        model_name = "ensemble-2025-02-10-14-57-22"
-        epoch = 0
+        clip_model_name = "openai/clip-vit-base-patch16"
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-        self.predicate_model = load_model(model_dir, model_name, epoch, device)
+        self.predicate_model = PredicateModel_v3(hidden_dim=128, num_top_pairs=1, device=device, model_name=clip_model_name).to(device)
 
     def _save_dataset_sample(self, image_path, image, sg_info, all_labels, all_boxes, instruction):
         if not self.dataset_save_dir:

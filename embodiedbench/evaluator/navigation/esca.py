@@ -319,8 +319,8 @@ if __name__ == '__main__':
         'top_k': 1,
         'aggr_thres': 0.1,
         'max_test_ct': 5,
-        'gd_config_path': '/path/to/GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py',
-        'gd_checkpoint_path': '/path/to/GroundingDINO/checkpoints/groundingdino_swint_ogc.pth',
+        'gd_config_path': '/home/vortex/miniconda3/envs/AdversarialVLA/lib/python3.10/site-packages/groundingdino/config/GroundingDINO_SwinT_OGC.py',
+        'gd_checkpoint_path': os.path.expanduser('~/GroundingDINO/checkpoints/groundingdino_swint_ogc.pth'),
         'dataset_save_dir': './dataset/navigation',
     }
 

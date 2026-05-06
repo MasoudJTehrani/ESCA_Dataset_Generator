@@ -71,7 +71,7 @@ def load_task_json(task):
     '''
     load preprocessed json from disk
     '''
-    json_path = os.path.join(os.path.dirname(__file__), 'data/json_2.1.0', task['task'], 'pp',
+    json_path = os.path.join(os.path.dirname(__file__), 'data', task['task'], 'pp',
                              'ann_%d.json' % task['repeat_idx'])
     with open(json_path) as f:
         data = json.load(f)

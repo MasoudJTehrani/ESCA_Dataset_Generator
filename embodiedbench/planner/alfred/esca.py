@@ -61,8 +61,12 @@ import math
 import numpy as np
 
 
-model_lib_path = "/home/asethi04/LASER/LASER-unified/src/models"
-sys.path.append(model_lib_path)
+model_lib_path = "/home/vortex/LASER/laser/models"
+laser_root_path = "/home/vortex/LASER"
+if model_lib_path not in sys.path:
+    sys.path.append(model_lib_path)
+if laser_root_path not in sys.path:
+    sys.path.append(laser_root_path)
 
 from llava_clip_model_v3 import PredicateModel as PredicateModel_v3
 
@@ -676,14 +680,13 @@ Look at the image and describe what you see.
                 # The model will be downloaded automatically if not present
                 from groundingdino.util.inference import load_model as load_grounding_model
                 import groundingdino
-                import os
                 
                 # Use the correct config path from the installed package
                 package_dir = os.path.dirname(groundingdino.__file__)
                 model_config_path = os.path.join(package_dir, "config", "GroundingDINO_SwinT_OGC.py")
                 
                 # Check if weights file exists, if not download it
-                model_checkpoint_path = "/home/asethi04/GroundingDINO/checkpoints/groundingdino_swint_ogc.pth"
+                model_checkpoint_path = os.path.expanduser("~/GroundingDINO/checkpoints/groundingdino_swint_ogc.pth")
                 if not os.path.exists(model_checkpoint_path):
                     print("Model weights not found. Please download them using:")
                     print("wget https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth")

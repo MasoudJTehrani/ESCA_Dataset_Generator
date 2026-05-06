@@ -22,7 +22,6 @@ from PIL import Image
 import embodiedbench.envs.eb_alfred.utils as utils
 from embodiedbench.envs.eb_alfred.utils import alfred_objs, alfred_open_obj, alfred_pick_obj, alfred_slice_obj, alfred_open_obj, alfred_toggle_obj, alfred_recep
 from embodiedbench.envs.eb_alfred.thor_connector import ThorConnector
-from embodiedbench.envs.eb_alfred.data.preprocess import Dataset
 from embodiedbench.envs.eb_alfred.gen import constants
 from embodiedbench.main import logger
 
@@ -30,7 +29,7 @@ from embodiedbench.main import logger
 X_DISPLAY = '1'
 ALFRED_SPLIT_PATH = os.path.join(os.path.dirname(__file__), 'data/splits/splits.json')
 ALFRED_REWARD_PATH = os.path.join(os.path.dirname(__file__), 'models/config/rewards.json')
-ALFRED_DATASET_PATH = os.path.join(os.path.dirname(__file__), 'data/json_2.1.0')
+ALFRED_DATASET_PATH = os.path.join(os.path.dirname(__file__), 'data')
 ValidEvalSets = [
     'base', 'common_sense', 'complex_instruction', 'spatial', 
     'visual_appearance', 'long_horizon'
