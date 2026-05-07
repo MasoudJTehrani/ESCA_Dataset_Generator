@@ -297,6 +297,14 @@ class SceneGraphAnalysis(BaseModel):
     target_relations: list[list[str]]
     current_relations: list[list[str]]
     explanation: str
+
+class NavigationSceneGraph(BaseModel):
+    """Scene graph for navigation tasks — identifies target, attributes, relations, and nearby objects"""
+    target_name: list[str]
+    blocking_name: list[str]
+    target_attribute: list[str]
+    target_relation: list[list[str]]
+    related_objects: list[str]
     
 class TargetStateCurrentState(BaseModel):
     Visual_Description: str

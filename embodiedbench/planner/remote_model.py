@@ -21,6 +21,7 @@ from embodiedbench.planner.planner_utils import (
     ActionPlan_lang_manip,
     TargetSG,
     SceneGraphAnalysis,
+    NavigationSceneGraph,
     convert_format_2gpt,
     TargetEntityName,
     ActionPlan_SG_baseline,
@@ -252,21 +253,21 @@ class RemoteModel:
         #     else:
         #         response_format = vlm_generation_guide
         
-        if self.task_type == 'manip': 
+        if self.task_type == 'manip':
             if self.language_only:
                 response_format = ActionPlan_lang_manip
             elif not self.language_only:
                 response_format = ActionPlan_manip
         else:
             if get_scene_graph:
-                response_format = SceneGraphAnalysis  # Use our complete scene graph model
+                response_format = NavigationSceneGraph if self.task_type == 'navigation' else SceneGraphAnalysis
             elif self.language_only:
-                response_format = ActionPlan_lang 
+                response_format = ActionPlan_lang
             elif sg_baseline:
                 response_format = ActionPlan_SG_baseline
             else:
                 response_format =  ActionPlan
-                
+
         response = client.responses.parse(
             model=self.model_name,
             input=message_history,

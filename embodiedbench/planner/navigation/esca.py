@@ -36,7 +36,11 @@ from PIL import Image
 import numpy as np
 
 model_lib_path = "/home/vortex/LASER/laser/models"
-sys.path.append(model_lib_path)
+laser_root_path = "/home/vortex/LASER"
+if model_lib_path not in sys.path:
+    sys.path.append(model_lib_path)
+if laser_root_path not in sys.path:
+    sys.path.append(laser_root_path)
 
 from llava_clip_model_v3 import PredicateModel as PredicateModel_v3
 
@@ -250,7 +254,7 @@ You are supposed to output in JSON. Note that nested quotes is not allowed. Plea
         if model_type == 'custom':
             self.model = CustomModel(model_name, language_only)
         else:
-            self.model = RemoteModel(model_name, model_type, language_only, tp=tp)
+            self.model = RemoteModel(model_name, model_type, language_only, tp=tp, task_type='navigation')
 
         self.grounding_model = gd_Model(
             model_config_path=gd_config_path, 
